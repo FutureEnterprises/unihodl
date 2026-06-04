@@ -36,10 +36,10 @@
     "decision-continuity"
   ],
   "homepage": "https://unihodl.app/sdk",
-  "bugs": "https://github.com/FutureEnterprises/unihodl-sdk/issues",
+  "bugs": "https://github.com/FutureEnterprises/unihodl/issues",
   "repository": {
     "type": "git",
-    "url": "https://github.com/FutureEnterprises/unihodl-sdk.git",
+    "url": "https://github.com/FutureEnterprises/unihodl.git",
     "directory": "packages/agent-sdk"
   },
   "license": "MIT",

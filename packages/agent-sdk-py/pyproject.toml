@@ -40,8 +40,8 @@ dependencies = [
 [project.urls]
 Homepage = "https://unihodl.app/sdk"
 Documentation = "https://unihodl.app/sdk/spec"
-Repository = "https://github.com/FutureEnterprises/unihodl-sdk"
-Issues = "https://github.com/FutureEnterprises/unihodl-sdk/issues"
+Repository = "https://github.com/FutureEnterprises/unihodl"
+Issues = "https://github.com/FutureEnterprises/unihodl/issues"
 
 [build-system]
 requires = ["hatchling"]

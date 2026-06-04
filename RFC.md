@@ -1,7 +1,7 @@
 # RFC 0001 — Resume Tokens: a protocol for human→agent context handoff
 
 **Status:** Draft · **Version:** 0.1 · **License:** CC BY 4.0 (spec) / MIT (reference impl)
-**Discussion:** https://github.com/FutureEnterprises/unihodl-sdk/issues
+**Discussion:** https://github.com/FutureEnterprises/unihodl/issues
 
 > A Resume Token is a signed, scoped, revocable, audited bearer of a *human's*
 > working context — the tabs, scroll positions, media timestamps, and reasoning
