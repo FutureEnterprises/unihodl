@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+.venv/
+venv/
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+*.egg-info/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Env / secrets — never commit
+.env
+.env.*
+
+# OS / editor
+.DS_Store
+*.log

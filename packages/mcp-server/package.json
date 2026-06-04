@@ -1,0 +1,54 @@
+{
+  "name": "@unihodl/mcp-server",
+  "version": "0.2.1",
+  "description": "MCP server for UNIHODL Agent Handoff SDK. Lets any MCP-capable agent (Claude Desktop, Cursor, Cline, Continue) read UNIHODL sessions and resume human work mid-thought.",
+  "type": "module",
+  "bin": {
+    "unihodl-mcp-server": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --target node18 --clean",
+    "dev": "tsup src/index.ts --format esm --target node18 --watch",
+    "start": "node dist/index.js"
+  },
+  "keywords": [
+    "unihodl",
+    "mcp",
+    "model-context-protocol",
+    "claude",
+    "cursor",
+    "cline",
+    "continue",
+    "agent",
+    "handoff",
+    "resume"
+  ],
+  "homepage": "https://unihodl.app/sdk",
+  "bugs": "https://github.com/FutureEnterprises/unihodl-sdk/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/FutureEnterprises/unihodl-sdk.git",
+    "directory": "packages/mcp-server"
+  },
+  "license": "MIT",
+  "author": "UNIHODL <developers@unihodl.app>",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@unihodl/agent-sdk": "^0.2.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0"
+  }
+}

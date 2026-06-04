@@ -1,0 +1,55 @@
+{
+  "name": "@unihodl/agent-sdk",
+  "version": "0.2.1",
+  "description": "UNIHODL Agent Handoff SDK — pass human session context to AI agents (Claude, Gemini, OpenAI, LangGraph). Decision-continuity protocol.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --clean",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "unihodl",
+    "agent",
+    "ai",
+    "context",
+    "mcp",
+    "claude",
+    "gemini",
+    "openai",
+    "langgraph",
+    "handoff",
+    "resume",
+    "decision-continuity"
+  ],
+  "homepage": "https://unihodl.app/sdk",
+  "bugs": "https://github.com/FutureEnterprises/unihodl-sdk/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/FutureEnterprises/unihodl-sdk.git",
+    "directory": "packages/agent-sdk"
+  },
+  "license": "MIT",
+  "author": "UNIHODL <developers@unihodl.app>",
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "jose": "^6.2.3"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0"
+  }
+}
