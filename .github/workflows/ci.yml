@@ -1,0 +1,33 @@
+name: CI
+
+# Builds the published SDK packages on every push/PR. Its presence + green
+# status is what Glama reads for the "CI status" maintenance signal.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build SDK + MCP server
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Build @unihodl/agent-sdk
+        working-directory: packages/agent-sdk
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+      - name: Build @unihodl/mcp-server
+        working-directory: packages/mcp-server
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
