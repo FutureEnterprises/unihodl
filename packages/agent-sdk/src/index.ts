@@ -294,6 +294,31 @@ class SessionsApi {
     return new HydratedContext(ctx);
   }
 
+  /**
+   * List sessions in the API key's workspace, newest first.
+   * Keyset-paginated: pass `cursor` from a previous result to fetch the
+   * next page. Auth via API key. Returns metadata only.
+   */
+  async list(
+    opts: { limit?: number; cursor?: string; since?: string } = {},
+  ): Promise<{
+    sessions: Array<{
+      session_id: string;
+      title: string;
+      summary: string | null;
+      captured_at: string;
+      ai_tags: string[];
+    }>;
+    next_cursor: string | null;
+  }> {
+    const qs = new URLSearchParams();
+    if (opts.limit !== undefined) qs.set("limit", String(opts.limit));
+    if (opts.cursor) qs.set("cursor", opts.cursor);
+    if (opts.since) qs.set("since", opts.since);
+    const suffix = qs.size ? `?${qs.toString()}` : "";
+    return this.client.fetchJson(`/v1/sessions${suffix}`, { method: "GET" });
+  }
+
   /** Get session metadata. Auth via API key. Does not return content. */
   async get(sessionId: string): Promise<{
     session_id: string;

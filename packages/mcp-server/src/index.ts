@@ -43,7 +43,7 @@ import { Client, type Scope } from "@unihodl/agent-sdk";
 import { recordEvent } from "./telemetry.js";
 
 const SERVER_NAME = "unihodl";
-const SERVER_VERSION = "0.2.2";
+const SERVER_VERSION = "0.2.3";
 
 const apiKey = process.env.UNIHODL_API_KEY;
 if (!apiKey) {
@@ -110,19 +110,27 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
         required: ["session_id"],
         additionalProperties: false,
       },
+      annotations: {
+        title: "Resume a UNIHODL session",
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
     },
     {
       name: "list_sessions",
       description:
-        "List recent UNIHODL sessions readable by the configured API key, " +
-        "newest first. Read-only, no side effects. Returns JSON of the " +
-        "form {\"sessions\": [{\"session_id\", \"title\", \"captured_at\"}]}; " +
-        "pass any session_id to the resume tool to fetch its full context. " +
-        "Use this to discover what the human was working on when you do " +
-        "not already have a session_id — if you have one, call resume " +
-        "directly. Note: until the session-index endpoint ships (v1.1), " +
-        "sandbox keys see the demo session ses_8f3aZ91b; the response's " +
-        "'note' field states this.",
+        "List sessions in the workspace the configured API key can read, " +
+        "newest first, with cursor pagination. Read-only, no side effects. " +
+        "Returns {sessions: [{session_id, title, summary, captured_at, " +
+        "ai_tags}], next_cursor}. Pass any session_id to the resume tool " +
+        "for the full context; pass next_cursor back as `cursor` to fetch " +
+        "the next page (null means no more pages). Use this to discover " +
+        "what the human was working on when you do not already have a " +
+        "session_id — if you have one, call resume directly. Sandbox keys " +
+        "see the demo workspace. Errors: a malformed cursor or since value " +
+        "returns an error stating the expected format.",
       inputSchema: {
         type: "object",
         properties: {
@@ -135,8 +143,56 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
               "Maximum number of sessions to return, between 1 and 50. " +
               "Values outside the range are clamped rather than rejected.",
           },
+          cursor: {
+            type: "string",
+            description:
+              "Opaque pagination cursor from a previous response's " +
+              "next_cursor. Omit to start from the newest session. " +
+              "Malformed cursors are rejected with an error.",
+          },
+          since: {
+            type: "string",
+            format: "date-time",
+            description:
+              "Only return sessions captured at or after this ISO 8601 " +
+              "timestamp, e.g. '2026-06-01T00:00:00Z'.",
+          },
         },
         additionalProperties: false,
+      },
+      outputSchema: {
+        type: "object",
+        properties: {
+          sessions: {
+            type: "array",
+            description: "Sessions, newest first.",
+            items: {
+              type: "object",
+              properties: {
+                session_id: { type: "string" },
+                title: { type: "string" },
+                summary: { type: ["string", "null"] },
+                captured_at: { type: "string", format: "date-time" },
+                ai_tags: { type: "array", items: { type: "string" } },
+              },
+              required: ["session_id", "title", "captured_at"],
+            },
+          },
+          next_cursor: {
+            type: ["string", "null"],
+            description:
+              "Pass back as `cursor` to fetch the next page; null when " +
+              "there are no more pages.",
+          },
+        },
+        required: ["sessions", "next_cursor"],
+      },
+      annotations: {
+        title: "List UNIHODL sessions",
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
       },
     },
   ],
@@ -190,36 +246,29 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
   }
 
   if (name === "list_sessions") {
-    // v0 sandbox stub: returns the canned demo session. Live listing
-    // lands in v1.1 once /v1/sessions index endpoint is wired. The limit
-    // contract (clamp to 1..50, default 10) is honored so behavior matches
-    // the advertised schema as the real listing arrives.
     const rawLimit = Number(args?.limit);
     const limit = Number.isFinite(rawLimit)
       ? Math.max(1, Math.min(50, Math.trunc(rawLimit)))
       : 10;
-    const sessions = [
-      {
-        session_id: "ses_8f3aZ91b",
-        title: "GraphQL migration for API v3",
-        captured_at: "2026-05-05T22:14:08Z",
-      },
-    ].slice(0, limit);
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(
-            {
-              sessions,
-              note: "Live session listing lands in v1.1. See https://unihodl.app/sdk/roadmap.",
-            },
-            null,
-            2,
-          ),
-        },
-      ],
-    };
+    const cursor =
+      typeof args?.cursor === "string" && args.cursor ? args.cursor : undefined;
+    const since =
+      typeof args?.since === "string" && args.since ? args.since : undefined;
+    try {
+      const result = await uh.sessions.list({ limit, cursor, since });
+      return {
+        content: [
+          { type: "text", text: JSON.stringify(result, null, 2) },
+        ],
+        structuredContent: result,
+      };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return {
+        content: [{ type: "text", text: `UNIHODL error: ${msg}` }],
+        isError: true,
+      };
+    }
   }
 
   return {

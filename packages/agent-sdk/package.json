@@ -1,6 +1,6 @@
 {
   "name": "@unihodl/agent-sdk",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "UNIHODL Agent Handoff SDK — pass human session context to AI agents (Claude, Gemini, OpenAI, LangGraph). Decision-continuity protocol.",
   "type": "module",
   "main": "./dist/index.cjs",

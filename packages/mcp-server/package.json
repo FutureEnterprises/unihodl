@@ -1,6 +1,6 @@
 {
   "name": "@unihodl/mcp-server",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "MCP server for UNIHODL Agent Handoff SDK. Lets any MCP-capable agent (Claude Desktop, Cursor, Cline, Continue) read UNIHODL sessions and resume human work mid-thought.",
   "type": "module",
   "bin": {
@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
-    "@unihodl/agent-sdk": "^0.2.2"
+    "@unihodl/agent-sdk": "^0.2.3"
   },
   "publishConfig": {
     "access": "public"
