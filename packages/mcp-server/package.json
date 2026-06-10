@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
-    "@unihodl/agent-sdk": "^0.2.1"
+    "@unihodl/agent-sdk": "^0.2.2"
   },
   "publishConfig": {
     "access": "public"

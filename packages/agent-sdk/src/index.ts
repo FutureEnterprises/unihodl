@@ -155,14 +155,25 @@ export class HydratedContext {
    * suitable for direct injection as a system prompt.
    */
   asSystemPrompt(): string {
+    // If the API already rendered prompt-ready text (hydrate with
+    // format: "prompt-ready" returns text/x-unihodl-prompt), `raw` is that
+    // string — return it as-is instead of re-formatting.
+    if (typeof (this.raw as unknown) === "string") {
+      return this.raw as unknown as string;
+    }
     const ctx = this.raw;
+    // Sections may be absent under scope filtering (e.g. a token without
+    // read:reasoning omits reasoning_thread) — degrade gracefully.
+    const thread = ctx.reasoning_thread ?? [];
+    const tabs = ctx.tabs ?? [];
+    const media = ctx.media ?? [];
     const lines: string[] = [];
     lines.push(
-      `## CONTEXT (UNIHODL session ${ctx.session_id} · ${ctx.captured_at.slice(0, 10)})\n`,
+      `## CONTEXT (UNIHODL session ${ctx.session_id} · ${(ctx.captured_at ?? "").slice(0, 10)})\n`,
     );
     lines.push(`The user is researching: "${ctx.title}."\n`);
 
-    const concl = ctx.reasoning_thread.filter(
+    const concl = thread.filter(
       (n) => n.kind === "observation" || n.kind === "partial_conclusion",
     );
     if (concl.length) {
@@ -177,35 +188,33 @@ export class HydratedContext {
       lines.push("");
     }
 
-    const stance = ctx.reasoning_thread.find(
-      (n) => n.kind === "decision_stance",
-    );
+    const stance = thread.find((n) => n.kind === "decision_stance");
     if (stance) {
       lines.push("Where they currently lean:");
       lines.push(`  → ${stance.text}\n`);
     }
 
-    const blockers = ctx.reasoning_thread.filter((n) => n.kind === "blocker");
+    const blockers = thread.filter((n) => n.kind === "blocker");
     if (blockers.length) {
       lines.push("Open blockers:");
       for (const b of blockers) lines.push(`  ! ${b.text}`);
       lines.push("");
     }
 
-    const next = ctx.reasoning_thread.find((n) => n.kind === "next_step");
+    const next = thread.find((n) => n.kind === "next_step");
     if (next) {
       lines.push("Intended next step:");
       lines.push(`  → ${next.text}\n`);
     }
 
-    if (ctx.tabs.length || ctx.media.length) {
+    if (tabs.length || media.length) {
       lines.push(
-        `Sources they consulted (${ctx.tabs.length} tabs, ${ctx.media.length} video):`,
+        `Sources they consulted (${tabs.length} tabs, ${media.length} video):`,
       );
-      ctx.tabs.forEach((t, i) => {
+      tabs.forEach((t, i) => {
         lines.push(`  [${i + 1}] ${t.url} — ${t.title}`);
       });
-      ctx.media.forEach((m) => {
+      media.forEach((m) => {
         lines.push(`  [v] ${m.url}`);
       });
       lines.push("");
