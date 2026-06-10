@@ -43,7 +43,7 @@ import { Client, type Scope } from "@unihodl/agent-sdk";
 import { recordEvent } from "./telemetry.js";
 
 const SERVER_NAME = "unihodl";
-const SERVER_VERSION = "0.2.1";
+const SERVER_VERSION = "0.2.2";
 
 const apiKey = process.env.UNIHODL_API_KEY;
 if (!apiKey) {
@@ -73,47 +73,56 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     {
       name: "resume",
       description:
-        "Resume a UNIHODL session — fetch the human's open tabs, scroll " +
-        "positions, video timestamps, the AI-tagged decision thread, " +
-        "partial conclusions, and intended next step. Returns the full " +
-        "Resume Context. Call this before any other tool when given a " +
-        "session_id.",
+        "Fetch a UNIHODL session as Resume Context — the human's open tabs, " +
+        "scroll positions, video timestamps, AI-tagged decision thread, " +
+        "partial conclusions, and intended next step. Read-only and " +
+        "idempotent: it never modifies the session. Use it when you have a " +
+        "session_id (from list_sessions or the user) and need the human's " +
+        "working context before continuing their task; to discover sessions " +
+        "instead, use list_sessions. Returns a prompt-ready text block by " +
+        "default, or the raw Resume Context object with format 'json'. " +
+        "Errors: a malformed session_id is rejected before any network " +
+        "call; an unknown, expired, or revoked session returns an error " +
+        "message stating the reason.",
       inputSchema: {
         type: "object",
         properties: {
           session_id: {
             type: "string",
             pattern: "^ses_[A-Za-z0-9]+$",
-            description: "The UNIHODL session id (e.g., ses_8f3aZ91b).",
-          },
-          include: {
-            type: "array",
-            items: {
-              type: "string",
-              enum: ["tabs", "media", "reasoning_thread", "ai_tags"],
-            },
             description:
-              "Which sections of the Resume Context to include. " +
-              "Default: all.",
+              "UNIHODL session id in the form ses_<alphanumeric>, e.g. " +
+              "'ses_8f3aZ91b'. Obtain one from list_sessions or from the " +
+              "user. Ids that do not match the pattern are rejected " +
+              "without a network call.",
           },
           format: {
             type: "string",
-            enum: ["json", "prompt-ready"],
+            enum: ["prompt-ready", "json"],
+            default: "prompt-ready",
             description:
-              "Wire format. 'prompt-ready' returns a structured " +
-              "natural-language block. 'json' returns the raw " +
-              "Resume Context.",
+              "'prompt-ready' (default): a structured natural-language " +
+              "block ready to inject directly into model context. " +
+              "'json': the raw Resume Context object for programmatic " +
+              "use (schema: https://www.unihodl.app/sdk/spec).",
           },
         },
         required: ["session_id"],
+        additionalProperties: false,
       },
     },
     {
       name: "list_sessions",
       description:
-        "List recent UNIHODL sessions in the current workspace. " +
-        "Useful when the agent needs to discover what the human has " +
-        "been working on without a specific session_id.",
+        "List recent UNIHODL sessions readable by the configured API key, " +
+        "newest first. Read-only, no side effects. Returns JSON of the " +
+        "form {\"sessions\": [{\"session_id\", \"title\", \"captured_at\"}]}; " +
+        "pass any session_id to the resume tool to fetch its full context. " +
+        "Use this to discover what the human was working on when you do " +
+        "not already have a session_id — if you have one, call resume " +
+        "directly. Note: until the session-index endpoint ships (v1.1), " +
+        "sandbox keys see the demo session ses_8f3aZ91b; the response's " +
+        "'note' field states this.",
       inputSchema: {
         type: "object",
         properties: {
@@ -121,9 +130,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
             type: "number",
             minimum: 1,
             maximum: 50,
-            description: "Max sessions to return. Default 10.",
+            default: 10,
+            description:
+              "Maximum number of sessions to return, between 1 and 50. " +
+              "Values outside the range are clamped rather than rejected.",
           },
         },
+        additionalProperties: false,
       },
     },
   ],
@@ -146,11 +159,7 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
       };
     }
 
-    const includeRaw = args?.include as string[] | undefined;
     const scopes: Scope[] = ["read:context", "read:reasoning"];
-    if (includeRaw?.includes("ai_tags")) {
-      // ai_tags ride along with read:context
-    }
     const fmt = (args?.format ?? "prompt-ready") as "json" | "prompt-ready";
 
     try {
@@ -182,20 +191,27 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
 
   if (name === "list_sessions") {
     // v0 sandbox stub: returns the canned demo session. Live listing
-    // lands in v1.1 once /v1/sessions index endpoint is wired.
+    // lands in v1.1 once /v1/sessions index endpoint is wired. The limit
+    // contract (clamp to 1..50, default 10) is honored so behavior matches
+    // the advertised schema as the real listing arrives.
+    const rawLimit = Number(args?.limit);
+    const limit = Number.isFinite(rawLimit)
+      ? Math.max(1, Math.min(50, Math.trunc(rawLimit)))
+      : 10;
+    const sessions = [
+      {
+        session_id: "ses_8f3aZ91b",
+        title: "GraphQL migration for API v3",
+        captured_at: "2026-05-05T22:14:08Z",
+      },
+    ].slice(0, limit);
     return {
       content: [
         {
           type: "text",
           text: JSON.stringify(
             {
-              sessions: [
-                {
-                  session_id: "ses_8f3aZ91b",
-                  title: "GraphQL migration for API v3",
-                  captured_at: "2026-05-05T22:14:08Z",
-                },
-              ],
+              sessions,
               note: "Live session listing lands in v1.1. See https://unihodl.app/sdk/roadmap.",
             },
             null,
